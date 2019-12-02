@@ -4,24 +4,22 @@ with pkgs; rec {
   initialIntcode = _.compose (map _.safeToInt) _.file.readCSV input;
   restoreGravityAssist = { noun, verb }:
     _.compose (_.setAt 2 verb) (_.setAt 1 noun);
-  runOp = op: args: xs:
-    let
-      val0 = elemAt xs (elemAt args 0);
-      val1 = elemAt xs (elemAt args 1);
-      newVal = op val0 val1;
-    in _.setAt (elemAt args 2) newVal xs;
-  add = runOp (a: b: a + b);
-  mul = runOp (a: b: a * b);
-  opArgs = pos: lib.sublist (pos + 1) (pos + 3);
+  add = a: b: a + b;
+  mul = a: b: a * b;
+  deref = pos: xs: elemAt xs (elemAt xs pos);
+  setOut = pos: x: xs: _.setAt (elemAt xs pos) x xs;
+  binOp = f: xs: pos:
+    let result = f (deref pos xs) (deref (pos + 1) xs);
+    in runProgram (pos + 3) (setOut (pos + 2) result xs);
   runProgram = pos: xs:
     if pos >= length xs then
       xs
     else
       let curr = elemAt xs pos;
       in if curr == 1 then
-        runProgram (pos + 4) (add (opArgs pos xs) xs)
+        binOp add xs (pos + 1)
       else if curr == 2 then
-        runProgram (pos + 4) (mul (opArgs pos xs) xs)
+        binOp mul xs (pos + 1)
       else if curr == 99 then
         xs
       else
