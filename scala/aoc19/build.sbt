@@ -7,5 +7,5 @@ ThisBuild / organizationName := "stoeffel"
 lazy val root = (project in file("."))
   .settings(
     name := "aoc19",
-    libraryDependencies += scalaTest % Test
+    libraryDependencies ++= Seq(catsCore, catsEffect, scalaTest % Test)
   )
