@@ -3,7 +3,7 @@ import puzzles.Op._
 
 sealed abstract class Op extends Product {
   this: Op =>
-  def run(xs: Array[Int]): Option[(Int, Array[Int])] = this match {
+  def exec(xs: Array[Int]): Option[(Int, Array[Int])] = this match {
     case Terminate()   => None
     case Mul(a, b, to) => Some(3, xs.updated(to, xs(a) * xs(b)))
     case Add(a, b, to) => Some(3, xs.updated(to, xs(a) + xs(b)))
