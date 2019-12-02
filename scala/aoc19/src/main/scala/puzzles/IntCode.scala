@@ -40,9 +40,9 @@ object IntCode {
   def determinePair(goal: Int, xs: Array[Int]): Option[Int] = {
     NounVerb.build
       .find(
-        nv =>
-          run(0, restoreGravityAssist(xs, nv))
-            == goal
+        (restoreGravityAssist(xs, _))
+          andThen (run(0, _))
+          andThen (_ == goal)
       )
       .map(NounVerb.toInt(_))
   }
