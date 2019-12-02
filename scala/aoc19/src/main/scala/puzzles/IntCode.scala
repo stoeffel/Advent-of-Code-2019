@@ -7,21 +7,19 @@ import cats.implicits._
 import puzzles.implicits._
 import puzzles.IntCode.NounVerb._
 import cats.effect.IO
+import puzzles.Op.Error.{UnknownOp, EndOfInput}
 
 object IntCode {
   def restoreGravityAssist(xs: Array[Int], nounVerb: NounVerb): Array[Int] =
     xs.updated(1, nounVerb.noun).updated(2, nounVerb.verb)
 
   def run(pos: Int, xs: Array[Int]): Int =
-    Op.fromIntCode(pos, xs) match {
-      case Left(Op.Error.UnknownOp(op)) =>
-        throw (new Error(s"Unknown op: $op"))
-      case Left(Op.Error.EndOfInput()) => xs(0)
-      case Right(op) =>
-        op.run(xs) match {
-          case Some(ys) => run(pos + op.productArity + 1, ys)
-          case None     => xs(0)
-        }
+    Op.fromIntCode(pos, xs)
+      .map(_.run(xs)) match {
+      case Left(UnknownOp(op))      => throw (new Error(s"Unknown op: $op"))
+      case Left(EndOfInput())       => xs(0)
+      case Right(Some((arity, ys))) => run(pos + arity + 1, ys)
+      case Right(None)              => xs(0)
     }
 
   object NounVerb {
