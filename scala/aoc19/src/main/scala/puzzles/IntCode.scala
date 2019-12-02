@@ -17,9 +17,8 @@ object IntCode {
     Op.fromIntCode(pos, xs)
       .map(_.exec(xs)) match {
       case Right(Some((arity, ys))) => run(pos + arity + 1, ys)
-      case Right(None)              => xs(0)
       case Left(UnknownOp(op))      => throw (new Error(s"Unknown op: $op"))
-      case Left(EndOfInput())       => xs(0)
+      case _                        => xs(0)
     }
 
   object NounVerb {
