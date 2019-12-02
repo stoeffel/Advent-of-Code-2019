@@ -15,6 +15,23 @@ object Op {
   final case class Mul(a: Int, b: Int, to: Int) extends Op
   final case class Terminate() extends Op
 
+  /**
+    * {{{
+    *
+    * >>> Op.fromIntCode(0, Array(1, 2, 3, 4))
+    * Right(Add(2,3,4))
+    *
+    * >>> Op.fromIntCode(0, Array(2, 2, 3, 4))
+    * Right(Mul(2,3,4))
+    *
+    * >>> Op.fromIntCode(0, Array(99, 2, 3, 4))
+    * Right(Terminate())
+    *
+    * >>> Op.fromIntCode(1, Array(42, 2, 2, 3, 4))
+    * Right(Mul(2,3,4))
+    *
+    * }}}
+    * */
   def fromIntCode(pos: Int, xs: Array[Int]): Either[Error, Op] =
     xs.drop(pos) match {
       case Array(1, a, b, to, _*) => Right(Add(a, b, to))
