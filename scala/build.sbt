@@ -8,9 +8,9 @@ lazy val root = (project in file("."))
   .settings(
     name := "aoc19",
     libraryDependencies ++= Seq(
+      attoCore,
       catsCore,
       catsEffect,
-      scalaParserCombinators,
       scalaCheck % Test,
       scalaTest % Test
     )

@@ -5,5 +5,5 @@ object Dependencies {
   lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.14.0"
   lazy val catsCore = "org.typelevel" %% "cats-core" % "2.0.0"
   lazy val catsEffect = "org.typelevel" %% "cats-effect" % "2.0.0"
-  lazy val scalaParserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
+  lazy val attoCore = "org.tpolecat" %% "atto-core" % "0.7.1"
 }

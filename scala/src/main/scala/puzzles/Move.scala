@@ -3,7 +3,8 @@ import puzzles.Move.D
 import puzzles.Move.U
 import puzzles.Move.R
 import puzzles.Move.L
-import scala.util.parsing.combinator._
+import atto._, Atto._
+import atto.parser.character
 
 sealed abstract class Move extends Product {
   this: Move =>
@@ -39,7 +40,7 @@ sealed abstract class Move extends Product {
   }
 }
 
-object Move extends RegexParsers {
+object Move {
   final case class U(x: Int) extends Move
   final case class D(x: Int) extends Move
   final case class R(x: Int) extends Move
@@ -70,22 +71,22 @@ object Move extends RegexParsers {
     * }}}
    **/
   def fromString(input: String): List[Move] =
-    parse(movesParser, input) match {
-      case Success(matched, _) => matched
-      case _                   => List()
+    movesParser
+      .parseOnly(input)
+      .option
+      .getOrElse(List())
+
+  private def movesParser: Parser[List[Move]] = sepBy(move, char(','))
+
+  private def direction: Parser[Char] = character.oneOf("UDRL")
+
+  private def move: Parser[Move] = (direction ~ int).flatMap { d =>
+    d match {
+      case ('U', s) => ok(U(s))
+      case ('D', s) => ok(D(s))
+      case ('L', s) => ok(L(s))
+      case ('R', s) => ok(R(s))
+      case _        => err("Unknown Move")
     }
-
-  private def movesParser: Parser[List[Move]] = rep1sep(move, ",".r)
-
-  private def number: Parser[Int] = """(\d+)""".r.map(_.toInt)
-
-  private def direction: Parser[String] = "(U|D|R|L){1}".r
-
-  private def move: Parser[Move] = direction ~ number flatMap {
-    case "U" ~ s => success(U(s))
-    case "D" ~ s => success(D(s))
-    case "L" ~ s => success(L(s))
-    case "R" ~ s => success(R(s))
-    case _       => failure("Unknown Move")
   }
 }

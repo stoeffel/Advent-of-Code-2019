@@ -6,7 +6,7 @@ import cats._
 import cats.implicits._
 import cats.effect.IO
 
-object Part1 extends App {
+object Day1Part1 extends App {
   def printStrLn(msg: String): IO[Unit] = IO(println(msg))
   def readFile(path: String)(implicit codec: Codec): IO[BufferedSource] =
     IO(Source.fromFile(path))
@@ -24,7 +24,7 @@ object Part1 extends App {
   result.flatMap(r => printStrLn(s"AoC 19 - Day 1: $r")).unsafeRunSync
 }
 
-object Part2 extends App {
+object Day1Part2 extends App {
   def calc(mass: Int): Int =
     mass / 3 - 2 match {
       case fuel if fuel <= 0 => 0
