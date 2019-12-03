@@ -10,6 +10,7 @@ lazy val root = (project in file("."))
     libraryDependencies ++= Seq(
       catsCore,
       catsEffect,
+      scalaParserCombinators,
       scalaCheck % Test,
       scalaTest % Test
     )
