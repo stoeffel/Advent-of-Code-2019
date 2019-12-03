@@ -12,7 +12,7 @@ object Part1 extends App {
     IO(Source.fromFile(path))
 
   val result = for {
-    file <- readFile("../../input/day-1.txt")
+    file <- readFile("../input/day-1.txt")
     lines = file.getLines
     fuel = lines.foldLeft(0) { (acc, massStr) =>
       Try(massStr.toInt).toOption match {
@@ -31,7 +31,7 @@ object Part2 extends App {
       case fuel              => fuel + calc(fuel)
     }
   val result = Source
-    .fromFile("../../input/day-1.txt")
+    .fromFile("../input/day-1.txt")
     .getLines
     .foldLeft(0) { (acc, massStr) =>
       Try(massStr.toInt).toOption match {
