@@ -31,7 +31,7 @@ object Op {
     * Right(Mul(2,3,4))
     *
     * }}}
-    * */
+    **/
   def fromIntCode(pos: Int, xs: Array[Int]): Either[Error, Op] =
     xs.drop(pos) match {
       case Array(1, a, b, to, _*) => Right(Add(a, b, to))
