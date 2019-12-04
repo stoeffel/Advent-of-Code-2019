@@ -31,13 +31,18 @@ sealed abstract class Move extends Product {
     }
   }
 
-  private def lower(): Option[Move] = this match {
-    case D(0) | U(0) | R(0) | L(0) => None
-    case D(x)                      => Some(D(x - 1))
-    case U(x)                      => Some(U(x - 1))
-    case R(x)                      => Some(R(x - 1))
-    case L(x)                      => Some(L(x - 1))
+  def map(f: Int => Int): Move = this match {
+    case D(x) => D(f(x))
+    case U(x) => U(f(x))
+    case R(x) => R(f(x))
+    case L(x) => L(f(x))
   }
+
+  private def lower(): Option[Move] =
+    this.productElement(0) match {
+      case 0 => None
+      case _ => Some(this.map(x => x - 1))
+    }
 }
 
 object Move {
@@ -78,9 +83,7 @@ object Move {
 
   private def movesParser: Parser[List[Move]] = sepBy(move, char(','))
 
-  private def direction: Parser[Char] = character.oneOf("UDRL")
-
-  private def move: Parser[Move] = (direction ~ int).flatMap { d =>
+  private def move: Parser[Move] = (anyChar ~ int).flatMap { d =>
     d match {
       case ('U', s) => ok(U(s))
       case ('D', s) => ok(D(s))

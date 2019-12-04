@@ -1,6 +1,7 @@
 { pkgs }:
 with builtins;
 with pkgs.lib; rec {
+  const = x: y: x;
   identity = x: x;
   compose = f: g: x: f (g x);
   flip = f: x: y: f y x;
@@ -19,4 +20,11 @@ with pkgs.lib; rec {
   };
   withDefault = x: { success, value }: if success then value else x;
   safeToInt = composing [ (withDefault 0) tryEval toInt ];
+  groupWhileEq = foldr (x: acc:
+    if acc == [ ] then
+      [ [ x ] ]
+    else if x == head (head acc) then
+      [ ([ x ] ++ (head acc)) ] ++ (tail acc)
+    else
+      [ [ x ] ] ++ acc) [ ];
 }
