@@ -50,10 +50,9 @@ object IntCode {
       .map(
         _.getLines
           .flatMap(_.split(","))
-          .map { code =>
+          .flatMap { code =>
             Try(code.toInt).toOption
           }
-          .collect { case Some(code) => code }
           .toArray
       )
 }

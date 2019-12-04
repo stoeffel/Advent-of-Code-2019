@@ -18,18 +18,18 @@ sealed abstract class Move extends Product {
     * List((2,2), (3,2))
     * }}}
    **/
-  def steps(from: (Int, Int)): List[(Int, Int)] = {
-    val step = this match {
-      case D(_) => (from._1, from._2 - 1)
-      case U(_) => (from._1, from._2 + 1)
-      case R(_) => (from._1 + 1, from._2)
-      case L(_) => (from._1 - 1, from._2)
-    }
+  def steps(from: (Int, Int)): List[(Int, Int)] =
     this.lower match {
-      case None       => List()
-      case Some(next) => step :: next.steps(step)
+      case None => List()
+      case Some(next) =>
+        val step = this match {
+          case D(_) => (from._1, from._2 - 1)
+          case U(_) => (from._1, from._2 + 1)
+          case R(_) => (from._1 + 1, from._2)
+          case L(_) => (from._1 - 1, from._2)
+        }
+        step :: next.steps(step)
     }
-  }
 
   def map(f: Int => Int): Move = this match {
     case D(x) => D(f(x))
@@ -83,13 +83,11 @@ object Move {
 
   private def movesParser: Parser[List[Move]] = sepBy(move, char(','))
 
-  private def move: Parser[Move] = (anyChar ~ int).flatMap { d =>
-    d match {
-      case ('U', s) => ok(U(s))
-      case ('D', s) => ok(D(s))
-      case ('L', s) => ok(L(s))
-      case ('R', s) => ok(R(s))
-      case _        => err("Unknown Move")
-    }
+  private def move: Parser[Move] = (anyChar ~ int).flatMap {
+    case ('U', s) => ok(U(s))
+    case ('D', s) => ok(D(s))
+    case ('L', s) => ok(L(s))
+    case ('R', s) => ok(R(s))
+    case _        => err("Unknown Move")
   }
 }
