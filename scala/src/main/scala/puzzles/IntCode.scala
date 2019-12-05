@@ -9,7 +9,21 @@ import puzzles.IntCode.NounVerb._
 import cats.effect.IO
 import puzzles.Op.Error.{UnknownOp, EndOfInput}
 
-object IntCode {
+abstract class IntCode {
+  def parse(input: String): IO[Array[Int]] =
+    Util
+      .readFile(input)
+      .map(
+        _.getLines
+          .flatMap(_.split(","))
+          .flatMap { code =>
+            Try(code.toInt).toOption
+          }
+          .toArray
+      )
+}
+
+object IntCode extends IntCode {
   def restoreGravityAssist(xs: Array[Int], nounVerb: NounVerb): Array[Int] =
     xs.updated(1, nounVerb.noun).updated(2, nounVerb.verb)
 
@@ -43,16 +57,4 @@ object IntCode {
       )
       .map(NounVerb.toInt(_))
   }
-
-  def parse(input: String): IO[Array[Int]] =
-    Util
-      .readFile(input)
-      .map(
-        _.getLines
-          .flatMap(_.split(","))
-          .flatMap { code =>
-            Try(code.toInt).toOption
-          }
-          .toArray
-      )
 }
