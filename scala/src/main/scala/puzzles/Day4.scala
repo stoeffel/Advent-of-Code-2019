@@ -1,6 +1,4 @@
 package puzzles
-import cats._
-import cats.implicits._
 
 object Day4 extends App {
   val part1 = Password.possibilities(Password.hasDouble1) _

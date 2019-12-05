@@ -1,6 +1,5 @@
 package puzzles
 import cats.data.NonEmptyList
-import cats.data.NonEmptyList._
 
 object implicits {
   implicit class Crossable[X](xs: Traversable[X]) {

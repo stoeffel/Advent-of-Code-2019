@@ -16,8 +16,6 @@ object Op {
   final case class Terminate() extends Op
 
   /**
-    * {{{
-    *
     * >>> Op.fromIntCode(0, Array(1, 2, 3, 4))
     * Right(Add(2,3,4))
     *
@@ -29,8 +27,6 @@ object Op {
     *
     * >>> Op.fromIntCode(1, Array(42, 2, 2, 3, 4))
     * Right(Mul(2,3,4))
-    *
-    * }}}
     **/
   def fromIntCode(pos: Int, xs: Array[Int]): Either[Error, Op] =
     xs.drop(pos) match {

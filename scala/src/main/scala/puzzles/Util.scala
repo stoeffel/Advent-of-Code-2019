@@ -1,7 +1,6 @@
 package puzzles
 
 import scala.io.{Codec, BufferedSource, Source}
-import java.io.File
 import cats.effect.IO
 
 object Util {

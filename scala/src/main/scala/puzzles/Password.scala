@@ -1,5 +1,4 @@
 package puzzles
-import scala.collection.immutable.Nil
 import puzzles.implicits._
 
 object Password {
@@ -12,7 +11,6 @@ object Password {
     x => increasingNumbers(x.toString) && extra(x.toString)
 
   /**
-    * {{{
     * >>> Password.increasingNumbers("12345")
     * true
     *
@@ -21,13 +19,11 @@ object Password {
     *
     * >>> Password.increasingNumbers("12143")
     * false
-    * }}}
    **/
   val increasingNumbers: Validation[String] =
     x => x.toSeq.sorted == x.toSeq
 
   /**
-    * {{{
     * >>> Password.hasDouble1("12345")
     * false
     *
@@ -39,13 +35,11 @@ object Password {
     *
     * >>> Password.hasDouble1("1211143")
     * true
-    * }}}
    **/
   val hasDouble1: Validation[String] =
     _.toSeq.group.any(_.length >= 2)
 
   /**
-    * {{{
     * >>> Password.hasDouble2("12345")
     * false
     *
@@ -60,7 +54,6 @@ object Password {
     *
     * >>> Password.hasDouble2("12111443")
     * true
-    * }}}
    **/
   val hasDouble2: Validation[String] =
     _.toSeq.group.any(_.length == 2)

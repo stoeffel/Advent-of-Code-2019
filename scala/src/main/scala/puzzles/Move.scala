@@ -1,8 +1,5 @@
 package puzzles
-import puzzles.Move.D
-import puzzles.Move.U
-import puzzles.Move.R
-import puzzles.Move.L
+import puzzles.Move.{D, U, R, L}
 import atto._, Atto._
 import atto.parser.character
 
@@ -10,13 +7,11 @@ sealed abstract class Move extends Product {
   this: Move =>
 
   /**
-    * {{{
     * >>> Move.D(4).steps((0,0))
     * List((0,-1), (0,-2), (0,-3), (0,-4))
     *
     * >>> Move.R(2).steps((1,2))
     * List((2,2), (3,2))
-    * }}}
    **/
   def steps(from: (Int, Int)): List[(Int, Int)] =
     this.lower match {
@@ -52,7 +47,6 @@ object Move {
   final case class L(x: Int) extends Move
 
   /**
-    * {{{
     * >>> Move.fromString("U1")
     * List(U(1))
     *
@@ -73,7 +67,6 @@ object Move {
     *
     * >>> Move.fromString("X103")
     * List()
-    * }}}
    **/
   def fromString(input: String): List[Move] =
     movesParser

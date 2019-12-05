@@ -1,9 +1,5 @@
 package puzzles
-import scala.io.{Codec, BufferedSource, Source}
-import java.io.File
 import scala.util.Try
-import cats._
-import cats.implicits._
 import puzzles.implicits._
 import puzzles.IntCode.NounVerb._
 import cats.effect.IO

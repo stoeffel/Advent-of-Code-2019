@@ -1,5 +1,4 @@
 package puzzles
-import cats._
 
 object Day3Part1 extends App {
   Wire

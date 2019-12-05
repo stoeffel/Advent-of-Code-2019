@@ -1,9 +1,4 @@
 package puzzles
-import scala.io.{Codec, BufferedSource, Source}
-import java.io.File
-import scala.util.Try
-import cats._
-import cats.implicits._
 import cats.effect.IO
 
 object Day5 extends App {
