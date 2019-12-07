@@ -1,40 +1,46 @@
 package puzzles
 import puzzles.Op2._
+import cats.effect.IO
 
 sealed abstract class Op2 {
   type NextState = (Int, Array[Int], Option[Int])
-  def exec(pos: Int, xs: Array[Int]): Either[Terminate, NextState]
+  def exec(pos: Int, xs: Array[Int]): IO[Either[Terminate, NextState]]
 }
 
 object Op2 {
   type Pred[T] = T => Boolean
 
   final case class Add(a: Arg, b: Arg, to: Int) extends Op2 {
-    def exec(pos: Int, xs: Array[Int]): Either[Terminate, NextState] =
-      Right(pos + 4, xs.updated(to, a.value(xs) + b.value(xs)), None)
+    def exec(pos: Int, xs: Array[Int]): IO[Either[Terminate, NextState]] =
+      IO { Right(pos + 4, xs.updated(to, a.value(xs) + b.value(xs)), None) }
   }
 
   final case class Mul(a: Arg, b: Arg, to: Int) extends Op2 {
-    def exec(pos: Int, xs: Array[Int]): Either[Terminate, NextState] =
-      Right(pos + 4, xs.updated(to, a.value(xs) * b.value(xs)), None)
+    def exec(pos: Int, xs: Array[Int]): IO[Either[Terminate, NextState]] =
+      IO { Right(pos + 4, xs.updated(to, a.value(xs) * b.value(xs)), None) }
   }
 
-  final case class Input(a: Int, to: Int) extends Op2 {
-    def exec(pos: Int, xs: Array[Int]): Either[Terminate, NextState] =
-      Right(pos + 2, xs.updated(to, a), None)
+  final case class Input(f: IO[Int], to: Int) extends Op2 {
+    def exec(pos: Int, xs: Array[Int]): IO[Either[Terminate, NextState]] = {
+      for {
+        a <- f
+      } yield Right(pos + 2, xs.updated(to, a), None)
+    }
   }
 
   final case class Output(a: Arg) extends Op2 {
-    def exec(pos: Int, xs: Array[Int]): Either[Terminate, NextState] =
-      Right(pos + 2, xs, Some(a.value(xs)))
+    def exec(pos: Int, xs: Array[Int]): IO[Either[Terminate, NextState]] =
+      IO { Right(pos + 2, xs, Some(a.value(xs))) }
   }
 
   final case class JumpIf(pred: Pred[Int], a: Arg, b: Arg) extends Op2 {
-    def exec(pos: Int, xs: Array[Int]): Either[Terminate, NextState] =
-      if (pred(a.value(xs))) {
-        Right(b.value(xs), xs, None)
-      } else {
-        Right(pos + 3, xs, None)
+    def exec(pos: Int, xs: Array[Int]): IO[Either[Terminate, NextState]] =
+      IO {
+        if (pred(a.value(xs))) {
+          Right(b.value(xs), xs, None)
+        } else {
+          Right(pos + 3, xs, None)
+        }
       }
   }
   val jumpIfTrue = JumpIf((_ != 0), _, _)
@@ -42,13 +48,13 @@ object Op2 {
 
   final case class Cmp(pred: Pred[(Int, Int)], a: Arg, b: Arg, to: Int)
       extends Op2 {
-    def exec(pos: Int, xs: Array[Int]): Either[Terminate, NextState] = {
+    def exec(pos: Int, xs: Array[Int]): IO[Either[Terminate, NextState]] = {
       val newXs = if (pred(a.value(xs), b.value(xs))) {
         xs.updated(to, 1)
       } else {
         xs.updated(to, 0)
       }
-      Right(pos + 4, newXs, None)
+      IO { Right(pos + 4, newXs, None) }
     }
   }
 
@@ -56,7 +62,9 @@ object Op2 {
   val cmpEquals = Cmp({ case (x, y)   => x == y }, _, _, _)
 
   final case class Halt(e: Terminate) extends Op2 {
-    def exec(pos: Int, xs: Array[Int]): Either[Terminate, NextState] = Left(e)
+    def exec(pos: Int, xs: Array[Int]): IO[Either[Terminate, NextState]] = IO {
+      Left(e)
+    }
   }
   val halt: Op2 = Halt(Terminate.End())
   def fail(e: Terminate) = Halt(e)
@@ -100,19 +108,20 @@ object Op2 {
     }
 
   /**
-    * >>> Op2.fromIntCode(0, 0, Array(1002,5,3,0,99,33))
+    * >>> import cats.effect.IO
+    * >>> Op2.fromIntCode(IO(0), 0, Array(1002,5,3,0,99,33))
     * Mul(Position(5),Immediate(3),0)
     *
-    * >>> Op2.fromIntCode(0, 0, Array(1102, 2, -3, 4))
+    * >>> Op2.fromIntCode(IO(0), 0, Array(1102, 2, -3, 4))
     * Mul(Immediate(2),Immediate(-3),4)
     *
-    * >>> Op2.fromIntCode(0, 0, Array(1099, 2, 3, 4))
+    * >>> Op2.fromIntCode(IO(0), 0, Array(1099, 2, 3, 4))
     * Halt(End())
     *
-    * >>> Op2.fromIntCode(0, 1, Array(42, 102, 2, 3, 4))
+    * >>> Op2.fromIntCode(IO(0), 1, Array(42, 102, 2, 3, 4))
     * Mul(Immediate(2),Position(3),4)
     **/
-  def fromIntCode(input: Int, pos: Int, xs: Array[Int]): Op2 =
+  def fromIntCode(input: IO[Int], pos: Int, xs: Array[Int]): Op2 =
     xs.drop(pos) match {
       case Array() => halt
       case Array(op, args @ _*) =>
