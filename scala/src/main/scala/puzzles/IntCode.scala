@@ -1,56 +1,23 @@
 package puzzles
-import scala.util.Try
-import puzzles.implicits._
-import puzzles.IntCode.NounVerb._
 import cats.effect.IO
-import puzzles.Op.Error.{UnknownOp, EndOfInput}
+import puzzles.Op.Terminate
+import puzzles.Op.Terminate._
 
-abstract class IntCode {
-  def parse(input: String): IO[Array[Int]] =
-    Util
-      .readFile(input)
-      .map(
-        _.getLines
-          .flatMap(_.split(","))
-          .flatMap { code =>
-            Try(code.toInt).toOption
+object IntCode extends BasicIntCode {
+  /**
+    * >>> import cats.effect.IO
+    * >>> IntCode.diagnostic(IO(0), Array(11002,5,3,0,99,33)).unsafeRunSync
+    * End()
+    *
+   **/
+  def diagnostic(input: IO[Int], xs: Array[Int], pos: Int = 0): IO[Terminate] =
+    Op.fromIntCode(input, pos, xs)
+      .exec(pos, xs)
+      .flatMap(
+        result =>
+          result match {
+            case Left(halt)  => IO(halt)
+            case Right(next) => diagnostic(input, next.xs, next.pos)
           }
-          .toArray
       )
-}
-
-object IntCode extends IntCode {
-  def restoreGravityAssist(xs: Array[Int], nounVerb: NounVerb): Array[Int] =
-    xs.updated(1, nounVerb.noun).updated(2, nounVerb.verb)
-
-  def run(pos: Int, xs: Array[Int]): Int =
-    Op.fromIntCode(pos, xs)
-      .map(_.exec(xs)) match {
-      case Right(Some((arity, ys))) => run(pos + arity + 1, ys)
-      case Left(UnknownOp(op))      => throw (new Error(s"Unknown op: $op"))
-      case _                        => xs(0)
-    }
-
-  object NounVerb {
-    final case class NounVerb(noun: Int, verb: Int)
-
-    def default(): NounVerb = NounVerb(noun = 12, verb = 2)
-
-    def build(): Traversable[NounVerb] =
-      Range(0, 99)
-        .cross(Range(0, 99))
-        .map { case (noun, verb) => NounVerb(noun, verb) }
-
-    def toInt(nv: NounVerb): Int = 100 * nv.noun + nv.verb
-  }
-
-  def determinePair(goal: Int, xs: Array[Int]): Option[Int] = {
-    NounVerb.build
-      .find(
-        (restoreGravityAssist(xs, _))
-          andThen (run(0, _))
-          andThen (_ == goal)
-      )
-      .map(NounVerb.toInt(_))
-  }
 }
