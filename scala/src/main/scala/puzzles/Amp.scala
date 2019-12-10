@@ -4,10 +4,9 @@ import cats.effect._
 import cats.effect.concurrent._
 import cats.syntax._
 import cats.data._
-import puzzles.Op.Terminate
 import puzzles.Amp.Normal
 import puzzles.Amp.FeedbackLook
-import puzzles.Op._
+import puzzles.IntCode._
 
 object Amp {
   final case class State(pos: Position, memory: Memory, input: Option[Code])
