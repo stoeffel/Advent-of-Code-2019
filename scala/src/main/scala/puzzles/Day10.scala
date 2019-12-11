@@ -2,6 +2,7 @@ package puzzles
 import cats.effect._
 import cats.syntax.all._
 import scala.collection.immutable.Nil
+import puzzles.implicits._
 
 object Day10 extends IOApp {
   final case class Astroid(x: Int, y: Int) {
@@ -34,11 +35,7 @@ object Day10 extends IOApp {
     Station(astroid, astroids.map(astroid.angle(_)).toSet.size)
 
   def explode(astroids: List[List[Astroid]], count: Int): Option[Astroid] =
-    (count, astroids) match {
-      case (1, _)          => astroids.headOption.flatMap(_.headOption)
-      case (_, head :: tl) => explode(tl :+ head.tail, count - 1)
-      case (_, Nil)        => None
-    }
+    astroids.safeTranspose.flatten.drop(count - 1).headOption.flatten
 
   def orbiting(station: Station, astroids: List[Astroid]) =
     astroids

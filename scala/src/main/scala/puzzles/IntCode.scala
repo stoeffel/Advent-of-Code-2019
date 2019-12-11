@@ -3,6 +3,7 @@ import puzzles.IntCode._
 import cats.effect.IO
 import puzzles.IntCode.Terminate._
 import scala.util.Try
+import puzzles.implicits._
 
 object IntCode {
   type Code = Long
@@ -48,29 +49,23 @@ object IntCode {
 
   final case class Memory(memory: Map[Code, Code]) {
     def apply(index: Code): Code =
-      if (memory.contains(index)) {
-        memory(index)
-      } else {
-        0
-      }
+      memory.getOrElse(index, 0)
 
     def values(): List[Code] =
       memory.toList.sortBy(_._1).map(_._2)
 
     def updated(index: Code, value: Code): Memory =
-      if (memory.contains(index)) {
-        Memory(memory.updated(index, value))
-      } else {
-        Memory(memory ++ List((index, value)))
-      }
+      Memory(memory.insertOrUpdate(index, value))
 
     /**
       * >>> import puzzles.IntCode._
-      * >>> Memory.fromList(List(1,2,3,4)).drop(2).values
-      * List(3, 4)
+      * >>> Memory.fromList(List(1,2,3,4)).drop(2)
+      * Memory(Map(0 -> 3, 1 -> 4))
      **/
     def drop(index: Code): Memory =
-      Memory(memory.filter(_._1 >= index).map(x => x._1 - index -> x._2))
+      Memory(memory.collect {
+        case (k, v) if (k >= index) => k - index -> v
+      })
   }
 
   final case class Position(current: Code, base: Code = 0) {
@@ -82,7 +77,7 @@ object IntCode {
     def fromList(values: List[Code]) =
       Memory(
         values.zipWithIndex
-          .map(x => x._2.toLong -> x._1)
+          .map(_.swap.mapFst(_.toLong))
           .toMap
       )
 
@@ -90,21 +85,20 @@ object IntCode {
       Util
         .readFile(input)
         .map(
-          _.getLines
-            .flatMap(_.split(","))
-            .flatMap { code =>
-              Try(code.toLong).toOption
-            }
-            .toList
+          x =>
+            fromList(
+              x.getLines
+                .flatMap(_.split(","))
+                .map(_.toLong)
+                .toList
+            )
         )
-        .map(Memory.fromList(_))
   }
 
   sealed abstract class Op {
-    final case class NextState(pos: Position, xs: Memory)
+    final case class NextState private (pos: Position, xs: Memory)
     def exec(pos: Position, xs: Memory): IO[Either[Terminate, NextState]]
-    def next(pos: Position, xs: Memory) =
-      Right(NextState(pos, xs))
+    def next(pos: Position, xs: Memory) = Right(NextState(pos, xs))
   }
 
   type Pred[T] = T => Boolean
@@ -141,30 +135,29 @@ object IntCode {
 
   final case class Cmp(pred: Pred[(Code, Code)], a: Arg, b: Arg, to: Arg)
       extends Op {
-    def exec(pos: Position, xs: Memory): IO[Either[Terminate, NextState]] = {
-      val newXs = if (pred(a(xs), b(xs))) {
-        xs.updated(to.target, 1)
-      } else {
-        xs.updated(to.target, 0)
-      }
-      IO { next(pos + 4, newXs) }
-    }
+    def exec(pos: Position, xs: Memory): IO[Either[Terminate, NextState]] =
+      IO(
+        next(pos + 4, if (pred(a(xs), b(xs))) {
+          xs.updated(to.target, 1)
+        } else {
+          xs.updated(to.target, 0)
+        })
+      )
   }
 
   val cmpLessThan = Cmp({ case (x, y) => x < y }, _, _, _)
   val cmpEquals = Cmp({ case (x, y)   => x == y }, _, _, _)
 
   final case class Halt(e: Terminate) extends Op {
-    def exec(pos: Position, xs: Memory): IO[Either[Terminate, NextState]] = IO {
-      Left(e)
-    }
+    def exec(pos: Position, xs: Memory): IO[Either[Terminate, NextState]] =
+      IO(Left(e))
   }
   val halt: Op = Halt(Terminate.End())
   def fail(e: Terminate) = Halt(e)
 
   final case class AdjustBase(a: Arg) extends Op {
     def exec(pos: Position, xs: Memory): IO[Either[Terminate, NextState]] =
-      IO { next((pos + 2).copy(base = pos.base + a(xs)), xs) }
+      IO(next((pos + 2).copy(base = pos.base + a(xs)), xs))
   }
 
   sealed abstract class Arg extends Product {
@@ -175,7 +168,7 @@ object IntCode {
     def apply(xs: Memory): Code = xs(a)
     def target(): Code = a
   }
-  final case class Relative(pos: Position)(a: Code) extends Arg {
+  final case class Relative(pos: Position, a: Code) extends Arg {
     def apply(xs: Memory): Code = xs(pos.base + a)
     def target(): Code = pos.base + a
   }
@@ -199,50 +192,50 @@ object IntCode {
 
   /**
     * >>> import puzzles.IntCode._
-    * >>> IntCode.arg(Position(0), 100)
-    * Immediate
+    * >>> arg(Position(0), 100, 42)
+    * Immediate(42)
     *
-    * >>> IntCode.arg(Position(0), 102)
-    * Immediate
+    * >>> arg(Position(0), 102, 42)
+    * Immediate(42)
     *
-    * >>> IntCode.arg(Position(0), 2)
-    * Absolute
+    * >>> arg(Position(0), 2, 42)
+    * Absolute(42)
     *
-    * >>> IntCode.arg(Position(0), 10102)
-    * Immediate
+    * >>> arg(Position(0), 10102, 42)
+    * Immediate(42)
     *
-    * >>> IntCode.arg(Position(1), 10102)
-    * Absolute
+    * >>> arg(Position(1), 10102, 42)
+    * Absolute(42)
     *
-    * >>> IntCode.arg(Position(2), 10102)
-    * Immediate
+    * >>> arg(Position(2), 10102, 42)
+    * Immediate(42)
     *
-    * >>> IntCode.arg(Position(2), 102)
-    * Absolute
+    * >>> arg(Position(2), 102, 42)
+    * Absolute(42)
     *
-    * >>> IntCode.arg(Position(0, 4), 202)(42)
-    * Relative(Position(0,4))
+    * >>> arg(Position(0, 4), 202, 42)
+    * Relative(Position(0,4),42)
    **/
-  def arg(pos: Position, code: Code): (Code => Arg) =
-    code.toString.dropRight((pos + 2).toInt).lastOption match {
-      case Some('1') => Immediate
-      case Some('2') => Relative(pos)
-      case _         => Absolute
+  def arg(pos: Position, op: Code, a: Code): Arg =
+    op.toString.dropRight((pos + 2).toInt).lastOption match {
+      case Some('1') => Immediate(a)
+      case Some('2') => Relative(pos, a)
+      case _         => Absolute(a)
     }
 
   /**
     * >>> import cats.effect.IO
     * >>> import puzzles.IntCode._
-    * >>> IntCode.fromIntCode(IO(0), Position(0), Memory.fromList(List(1002,5,3,0,99,33)))
+    * >>> fromIntCode(IO(0), Position(0), Memory.fromList(List(1002,5,3,0,99,33)))
     * Mul(Absolute(5),Immediate(3),Absolute(0))
     *
-    * >>> IntCode.fromIntCode(IO(0), Position(0), Memory.fromList(List(1102, 2, -3, 4)))
+    * >>> fromIntCode(IO(0), Position(0), Memory.fromList(List(1102, 2, -3, 4)))
     * Mul(Immediate(2),Immediate(-3),Absolute(4))
     *
-    * >>> IntCode.fromIntCode(IO(0), Position(0), Memory.fromList(List(1099, 2, 3, 4)))
+    * >>> fromIntCode(IO(0), Position(0), Memory.fromList(List(1099, 2, 3, 4)))
     * Halt(End())
     *
-    * >>> IntCode.fromIntCode(IO(0), Position(1), Memory.fromList(List(42, 102, 2, 3, 4)))
+    * >>> fromIntCode(IO(0), Position(1), Memory.fromList(List(42, 102, 2, 3, 4)))
     * Mul(Immediate(2),Absolute(3),Absolute(4))
     **/
   def fromIntCode(
@@ -253,19 +246,18 @@ object IntCode {
     xs.drop(pos.current).values match {
       case Nil => halt
       case op :: args =>
-        val a0 = arg(pos.copy(current = 0), op)
-        val a1 = arg(pos.copy(current = 1), op)
-        val a2 = arg(pos.copy(current = 2), op)
+        def arg_(x: Int) = arg(pos.copy(current = x), op, _)
+        val (_1, _2, _3) = (arg_(0), arg_(1), arg_(2))
         (op % 100, args) match {
-          case (1, a :: b :: to :: _) => Add(a0(a), a1(b), a2(to))
-          case (2, a :: b :: to :: _) => Mul(a0(a), a1(b), a2(to))
-          case (3, a :: _)            => Input(input, a0(a))
-          case (4, a :: _)            => Halt(Output(a0(a)(xs), xs, pos + 2))
-          case (5, a :: b :: _)       => jumpIfTrue(a0(a), a1(b))
-          case (6, a :: b :: _)       => jumpIfFalse(a0(a), a1(b))
-          case (7, a :: b :: to :: _) => cmpLessThan(a0(a), a1(b), a2(to))
-          case (8, a :: b :: to :: _) => cmpEquals(a0(a), a1(b), a2(to))
-          case (9, a :: _)            => AdjustBase(a0(a))
+          case (1, a :: b :: to :: _) => Add(_1(a), _2(b), _3(to))
+          case (2, a :: b :: to :: _) => Mul(_1(a), _2(b), _3(to))
+          case (3, a :: _)            => Input(input, _1(a))
+          case (4, a :: _)            => Halt(Output(_1(a)(xs), xs, pos + 2))
+          case (5, a :: b :: _)       => jumpIfTrue(_1(a), _2(b))
+          case (6, a :: b :: _)       => jumpIfFalse(_1(a), _2(b))
+          case (7, a :: b :: to :: _) => cmpLessThan(_1(a), _2(b), _3(to))
+          case (8, a :: b :: to :: _) => cmpEquals(_1(a), _2(b), _3(to))
+          case (9, a :: _)            => AdjustBase(_1(a))
           case (99, _)                => halt
           case (op, _)                => fail(Terminate.UnknownOp(op.toString))
         }

@@ -4,40 +4,39 @@ import java.io.File
 import scala.util.Try
 import cats._
 import cats.implicits._
-import cats.effect.IO
+import cats.effect._
 
-object Day1Part1 extends App {
-  def printStrLn(msg: String): IO[Unit] = IO(println(msg))
-  def readFile(path: String)(implicit codec: Codec): IO[BufferedSource] =
-    IO(Source.fromFile(path))
-
-  val result = for {
-    file <- readFile("../input/day-1.txt")
-    lines = file.getLines
-    fuel = lines.foldLeft(0) { (acc, massStr) =>
-      Try(massStr.toInt).toOption match {
-        case None       => acc
-        case Some(mass) => acc + (mass / 3 - 2)
+object Day1Part1 extends IOApp {
+  def run(args: List[String]): IO[ExitCode] =
+    for {
+      file <- Util.readFile("../input/day-1.txt")
+      lines = file.getLines
+      fuel = lines.foldLeft(0) { (acc, massStr) =>
+        Try(massStr.toInt).toOption match {
+          case None       => acc
+          case Some(mass) => acc + (mass / 3 - 2)
+        }
       }
-    }
-  } yield fuel
-  result.flatMap(r => printStrLn(s"AoC 19 - Day 1: $r")).unsafeRunSync
+      _ <- Util.printStrLn(s"AoC 19 - Day 1: $fuel")
+    } yield ExitCode.Success
 }
 
-object Day1Part2 extends App {
+object Day1Part2 extends IOApp {
   def calc(mass: Int): Int =
     mass / 3 - 2 match {
       case fuel if fuel <= 0 => 0
       case fuel              => fuel + calc(fuel)
     }
-  val result = Source
-    .fromFile("../input/day-1.txt")
-    .getLines
-    .foldLeft(0) { (acc, massStr) =>
-      Try(massStr.toInt).toOption match {
-        case None       => acc
-        case Some(mass) => acc + calc(mass)
+  def run(args: List[String]): IO[ExitCode] =
+    for {
+      file <- Util.readFile("../input/day-1.txt")
+      lines = file.getLines
+      result = lines.foldLeft(0) { (acc, massStr) =>
+        Try(massStr.toInt).toOption match {
+          case None       => acc
+          case Some(mass) => acc + calc(mass)
+        }
       }
-    }
-  println(s"AoC 19 - Day 1: $result")
+      _ <- Util.printStrLn(s"AoC 19 - Day 1: $result")
+    } yield ExitCode.Success
 }

@@ -1,6 +1,7 @@
 package puzzles
 import cats.effect._
 import cats.syntax.all._
+import puzzles.implicits._
 
 object Day8 extends IOApp {
   type Layer = List[Int]
@@ -24,8 +25,9 @@ object Day8 extends IOApp {
       .map(_.map {
         case 0 => " "
         case x => x.toString
-      }.mkString)
-      .mkString("\n")
+      })
+      .toList
+      .renderGrid
 
   def run(args: List[String]): IO[ExitCode] =
     for {

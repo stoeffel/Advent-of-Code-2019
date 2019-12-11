@@ -26,6 +26,7 @@ object Day11 extends IOApp {
         case _ => Black()
       }
   }
+
   sealed abstract class Action
   final case class Paint() extends Action
   final case class Move() extends Action
@@ -68,25 +69,25 @@ object Day11 extends IOApp {
 
     private def paint(out: Code) =
       this.copy(
-        panels = panels.get(current) match {
-          case None        => panels ++ List(current -> Color.fromCode(out))
-          case Some(value) => panels.updated(current, Color.fromCode(out))
-        },
+        panels = panels.insertOrUpdate(current, Color.fromCode(out)),
         action = Move()
       )
 
     private def move(out: Code) = {
-      val res = (direction, out) match {
-        case (Up(), 1)    => current.mapFst(_ + 1) -> direction.right
-        case (Up(), _)    => current.mapFst(_ - 1) -> direction.left
-        case (Down(), 1)  => current.mapFst(_ - 1) -> direction.right
-        case (Down(), _)  => current.mapFst(_ + 1) -> direction.left
-        case (Left(), 1)  => current.mapSnd(_ - 1) -> direction.right
-        case (Left(), _)  => current.mapSnd(_ + 1) -> direction.left
-        case (Right(), 1) => current.mapSnd(_ + 1) -> direction.right
-        case (Right(), _) => current.mapSnd(_ - 1) -> direction.left
+      val newDirection = out match {
+        case 1 => direction.right
+        case _ => direction.left
       }
-      this.copy(current = res._1, action = Paint(), direction = res._2)
+      this.copy(
+        action = Paint(),
+        direction = newDirection,
+        current = newDirection match {
+          case Up()    => current.mapSnd(_ - 1)
+          case Down()  => current.mapSnd(_ + 1)
+          case Left()  => current.mapFst(_ - 1)
+          case Right() => current.mapFst(_ + 1)
+        }
+      )
     }
 
     def currentColor(): Color = panels.get(current).getOrElse(default)
@@ -98,19 +99,16 @@ object Day11 extends IOApp {
         panels.map(_.mapFst(_.mapBoth(_ + minX.abs, _ + minY.abs)))
       val cols = newPanel.keys.maxBy(_._1)._1 + 1
       val rows = newPanel.keys.maxBy(_._2)._2 + 1
-      val row = Array.fill(cols)(" ")
-      val grid = Array.fill(rows)(row)
+      val row = List.fill(cols)(" ")
+      val grid = List.fill(rows)(row)
       val whitePanels = newPanel.filter(_._2 == White()).keys.toList
-      paintGrid(grid, whitePanels)
-        .map(_.toList.mkString(""))
-        .toList
-        .mkString("\n")
+      paintGrid(grid, whitePanels).renderGrid
     }
 
     private def paintGrid(
-        grid: Array[Array[String]],
+        grid: List[List[String]],
         ps: List[Panel]
-    ): Array[Array[String]] =
+    ): List[List[String]] =
       ps match {
         case head :: tl =>
           paintGrid(

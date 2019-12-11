@@ -4,7 +4,7 @@ import puzzles.implicits._
 object Password {
   type Validation[T] = T => Boolean
 
-  def possibilities(extra: Validation[String])(from: Int, to: Int): Int =
+  def possibilities(extra: Validation[String], from: Int, to: Int): Int =
     Range(from, to).count(valid(extra))
 
   def valid(extra: Validation[String]): Validation[Int] =
