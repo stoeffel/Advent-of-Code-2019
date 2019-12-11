@@ -18,6 +18,12 @@ object implicits {
     def manhattan(): Int = x._1.abs + x._2.abs
   }
 
+  implicit class MapTuple[A, B](val x: (A, B)) {
+    def mapFst[C](f: A => C): (C, B) = f(x._1) -> x._2
+    def mapSnd[C](f: B => C): (A, C) = x._1 -> f(x._2)
+    def mapBoth[C, D](f: A => C, g: B => D): (C, D) = f(x._1) -> g(x._2)
+  }
+
   implicit class GroupWhile[T](val xs: Traversable[T]) {
     def group(): List[NonEmptyList[T]] =
       xs.groupWhile((a, b) => a == b)

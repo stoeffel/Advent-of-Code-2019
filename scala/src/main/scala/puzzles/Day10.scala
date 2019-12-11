@@ -31,10 +31,7 @@ object Day10 extends IOApp {
       .toList
 
   def toStation(astroids: List[Astroid])(astroid: Astroid): Station =
-    Station(
-      astroid,
-      astroids.map(astroid.angle(_)).toSet.size
-    )
+    Station(astroid, astroids.map(astroid.angle(_)).toSet.size)
 
   def explode(astroids: List[List[Astroid]], count: Int): Option[Astroid] =
     (count, astroids) match {
