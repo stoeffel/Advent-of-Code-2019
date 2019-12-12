@@ -22,7 +22,8 @@ object AoC extends IOApp {
       Day8,
       Day9,
       Day10,
-      Day11
+      Day11,
+      Day12
     )
 
   def implemented(x: String) =
@@ -45,7 +46,7 @@ object AoC extends IOApp {
       }
       _ <- obj match {
         case None    => IO.unit
-        case Some(o) => o.run >> run(args)
+        case Some(o) => o.run
       }
     } yield ExitCode.Success
 }

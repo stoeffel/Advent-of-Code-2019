@@ -3,6 +3,28 @@ import cats.data.NonEmptyList
 import scala.collection.immutable.Nil
 
 object implicits {
+  implicit class MathExtras(a: Long) {
+    /**
+      * >>> import puzzles.implicits._
+      * >>> 1071.gcd(462)
+      * 21
+     **/
+    def gcd(b: Long): Long =
+      if (b == 0) {
+        a
+      } else {
+        b.gcd(a % b)
+      }
+
+    /**
+      * >>> import puzzles.implicits._
+      * >>> 21.lcm(6)
+      * 42
+     **/
+    def lcm(b: Long): Long =
+      (a * b).abs / a.gcd(b)
+  }
+
   implicit class Crossable[X](xs: Traversable[X]) {
     def cross[Y](ys: Traversable[Y]) = for { x <- xs; y <- ys } yield (x, y)
   }
