@@ -4,7 +4,7 @@ import cats.syntax.all._
 import scala.collection.immutable.Nil
 import puzzles.implicits._
 
-object Day10 extends IOApp {
+object Day10 extends AoCApp {
   final case class Astroid(x: Int, y: Int) {
     def distance(astroid: Astroid): Double =
       Math.sqrt(Math.pow(astroid.x - x, 2) + Math.pow(astroid.y - y, 2))
@@ -45,7 +45,7 @@ object Day10 extends IOApp {
       .sortBy(_._1)
       .map(_._2.sortBy(station.astroid.distance(_)))
 
-  def run(args: List[String]): IO[ExitCode] =
+  def run()(implicit cs: ContextShift[IO]) =
     for {
       input <- Util.readFile("../input/day-10.txt")
       res <- IO {
@@ -54,6 +54,6 @@ object Day10 extends IOApp {
         val lastExplosion = explode(orbiting(station, astroids), 200)
         (station, lastExplosion)
       }
-      _ <- Util.printStrLn(s"AoC 19 - Day 10:\n\n$res")
-    } yield (ExitCode.Success)
+      _ <- Util.printStrLn(s"Result:\n\n$res")
+    } yield ()
 }

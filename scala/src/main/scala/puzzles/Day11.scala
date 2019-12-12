@@ -9,7 +9,7 @@ import puzzles.Day11.Down
 import scala.collection.immutable.Nil
 import puzzles.implicits._
 
-object Day11 extends IOApp {
+object Day11 extends AoCApp {
   sealed abstract class Color {
     def toCode(): Code
   }
@@ -138,12 +138,12 @@ object Day11 extends IOApp {
       }
     } yield out
 
-  def run(args: List[String]): IO[ExitCode] =
+  def run()(implicit cs: ContextShift[IO]) =
     for {
       code <- IntCode.parse("../input/day-11.txt")
       result1 <- paint(Panels.init(Black()), code).map(_.panels.size)
       result2 <- paint(Panels.init(White()), code).map(_.render)
-      _ <- Util.printStrLn(s"AoC 19 - Day 11: $result1")
-      _ <- Util.printStrLn(s"AoC 19 - Day 11: \n\n\n$result2")
-    } yield (ExitCode.Success)
+      _ <- Util.printStrLn(s"Part 1: $result1")
+      _ <- Util.printStrLn(s"Part 2: \n\n\n$result2")
+    } yield ()
 }

@@ -3,7 +3,7 @@ import cats.effect._
 import cats.syntax.all._
 import puzzles.implicits._
 
-object Day8 extends IOApp {
+object Day8 extends AoCApp {
   type Layer = List[Int]
 
   def layers(lines: List[String], width: Int, height: Int) =
@@ -29,13 +29,13 @@ object Day8 extends IOApp {
       .toList
       .renderGrid
 
-  def run(args: List[String]): IO[ExitCode] =
+  def run()(implicit cs: ContextShift[IO]) =
     for {
       input <- Util.readFile("../input/day-8.txt")
       layers_ <- IO { layers(input.getLines.toList, 25, 6) }
       checksum_ <- IO { checksum(layers_) }
-      _ <- Util.printStrLn(s"AoC 19 - Day 8: $checksum_")
+      _ <- Util.printStrLn(s"Part 1: $checksum_")
       image <- IO { render(layers_, 25) }
-      _ <- Util.printStrLn(s"AoC 19 - Day 8:\n\n$image")
-    } yield (ExitCode.Success)
+      _ <- Util.printStrLn(s"Part 2:\n\n$image")
+    } yield ()
 }
